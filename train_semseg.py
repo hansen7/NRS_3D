@@ -1,29 +1,20 @@
 """
-Author: Benny
+Author: Benny and Hanchen, hw501@cam.ac.uk
 Date: Nov 2019
 """
-#  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import argparse
-import os
+import os, sys, torch, shutil, datetime, argparse, logging, importlib, provider, numpy as np
 from data_utils.S3DISDataLoader import S3DISDataset, S3DISDatasetWholeScene
-import torch
-import datetime
-import logging
 from pathlib import Path
-import sys
-import importlib
-import shutil
 from tqdm import tqdm
-import provider
-import numpy as np
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = BASE_DIR
 sys.path.append(os.path.join(ROOT_DIR, 'models'))
 
-classes = ['ceiling', 'floor', 'wall', 'beam', 'column', 'window', 'door', 'table', 'chair', 'sofa', 'bookcase',
-		   'board', 'clutter']
+classes = ['ceiling', 'floor', 'wall', 'beam', 'column',
+		   'window', 'door', 'table', 'chair', 'sofa',
+		   'bookcase', 'board', 'clutter']
 class2label = {cls: i for i, cls in enumerate(classes)}
 seg_classes = class2label
 seg_label_to_cat = {}

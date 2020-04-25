@@ -68,6 +68,11 @@ class get_model(nn.Module):
 		out_max = torch.cat([out_max, label.squeeze(1)], 1)
 		expand = out_max.view(-1, 2048 + 16, 1).repeat(1, 1, N)
 		concat = torch.cat([expand, out1, out2, out3, out4, out5], 1)
+
+		'''===NFL Modules==='''
+		concat = self.nfl(concat)
+
+		'''===MLP==='''
 		net = F.relu(self.bns1(self.convs1(concat)))
 		net = F.relu(self.bns2(self.convs2(net)))
 		net = F.relu(self.bns3(self.convs3(net)))

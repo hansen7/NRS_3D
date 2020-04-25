@@ -1,18 +1,12 @@
 """
-Author: Benny
+Actually the validation and test are using same data
+Author: Benny and Hanchen, hw501@cam.ac.uk
 Date: Nov 2019
 """
-#  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import argparse
-import os
+import os, sys, torch, logging, importlib, argparse, numpy as np
 from data_utils.ShapeNetDataLoader import PartNormalDataset
-import torch
-import logging
-import sys
-import importlib
 from tqdm import tqdm
-import numpy as np
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(BASE_DIR, 'models'))

@@ -126,13 +126,15 @@ def main(args):
 	shutil.copy('models/pointnet_util.py', str(experiment_dir))
 	shutil.copy('./pointnetnfl_partseg.yaml', str(experiment_dir))
 
-	device = torch.device("cuda" if args.cuda else "cpu")
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	# classifier = MODEL.get_model(num_part, normal_channel=args.normal).cuda()
 	classifier = MODEL.get_model(num_part, normal_channel=args.normal).to(device)
 	# criterion = MODEL.get_loss().cuda()
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
+	print("===================")
 	print("Let's use", torch.cuda.device_count(), "GPUs!")
+	print("===================")
 
 	def weights_init(m):
 		classname = m.__class__.__name__

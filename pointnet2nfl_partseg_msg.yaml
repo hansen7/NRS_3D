@@ -1,0 +1,20 @@
+DATASETS:
+    NAME: "ModelNet40"
+    CLASS: 128
+
+MODEL:
+    DD: 128 # the dim of output features by encoder
+    DH: 3 # or 3
+    DW: 3 # or 3
+    N_MUL: 2 # or 2
+    N_PER_GROUP: 32 # or 32 or 128
+    FC:
+        N_FC: 1024
+        B_FC: False
+
+INPUT:
+    SIZE: 4944
+    NORMAL: False
+
+SOLVER:
+    MAX_EPOCHS: 200
