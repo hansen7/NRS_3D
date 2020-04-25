@@ -125,6 +125,7 @@ def main(args):
 	shutil.copy('models/%s.py' % args.model, str(experiment_dir))
 	shutil.copy('models/pointnet_util.py', str(experiment_dir))
 	shutil.copy('./pointnetnfl_partseg.yaml', str(experiment_dir))
+	shutil.copy('./pointnet2nfl_partseg_msg.yaml', str(experiment_dir))
 
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	# classifier = MODEL.get_model(num_part, normal_channel=args.normal).cuda()
