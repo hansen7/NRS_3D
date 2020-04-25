@@ -1,17 +1,11 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-from NFL import NFL
-import os, torch, torch.nn as nn, torch.nn.functional as F
-from data_utils.Dict2Object import Dict2Object
+import torch, torch.nn as nn, torch.nn.functional as F
 from models.pointnet_util import PointNetSetAbstractionMsg, PointNetSetAbstraction, PointNetFeaturePropagation
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
 
 
 class get_model(nn.Module):
-	def __init__(self, num_classes, normal_channel=False,
-				 cfg=Dict2Object(os.path.join(ROOT_DIR, 'pointnet2nfl_partseg_msg.yaml'))):
+	def __init__(self, num_classes, normal_channel=False):
 		super(get_model, self).__init__()
 		if normal_channel:
 			additional_channel = 3
@@ -27,7 +21,6 @@ class get_model(nn.Module):
 		self.fp3 = PointNetFeaturePropagation(in_channel=1536, mlp=[256, 256])
 		self.fp2 = PointNetFeaturePropagation(in_channel=576, mlp=[256, 128])
 		self.fp1 = PointNetFeaturePropagation(in_channel=150 + additional_channel, mlp=[128, 128])
-		self.nfl = NFL(cfg)
 		self.conv1 = nn.Conv1d(128, 128, 1)
 		self.bn1 = nn.BatchNorm1d(128)
 		self.drop1 = nn.Dropout(0.5)
@@ -50,11 +43,7 @@ class get_model(nn.Module):
 		l1_points = self.fp2(l1_xyz, l2_xyz, l1_points, l2_points)
 		cls_label_one_hot = cls_label.view(B, 16, 1).repeat(1, 1, N)
 		l0_points = self.fp1(l0_xyz, l1_xyz, torch.cat([cls_label_one_hot, l0_xyz, l0_points], 1), l1_points)
-
-		'''===NFL Modules==='''
-		l0_points = self.nfl(l0_points)
-
-		# FC layers '''===MLP==='''
+		# FC layers
 		feat = F.relu(self.bn1(self.conv1(l0_points)))
 		x = self.drop1(feat)
 		x = self.conv2(x)
