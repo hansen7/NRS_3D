@@ -112,8 +112,12 @@ def main(args):
 	shutil.copy('./models/pointnet_util.py', str(experiment_dir))
 	shutil.copy('./pointnetnfl_cls.yaml', str(experiment_dir))
 
+	# classifier = MODEL.get_model(num_class, normal_channel=args.normal).cuda()
+	# criterion = MODEL.get_loss().cuda()
+
 	classifier = MODEL.get_model(num_class, normal_channel=args.normal).cuda()
-	criterion = MODEL.get_loss().cuda()
+	checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
+	classifier.load_state_dict(checkpoint['model_state_dict'])
 
 	try:
 		checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
