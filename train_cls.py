@@ -112,12 +112,8 @@ def main(args):
 	shutil.copy('./models/pointnet_util.py', str(experiment_dir))
 	shutil.copy('./pointnetnfl_cls.yaml', str(experiment_dir))
 
-	# classifier = MODEL.get_model(num_class, normal_channel=args.normal).cuda()
-	# criterion = MODEL.get_loss().cuda()
-
 	classifier = MODEL.get_model(num_class, normal_channel=args.normal).cuda()
-	checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
-	classifier.load_state_dict(checkpoint['model_state_dict'])
+	criterion = MODEL.get_loss().cuda()
 
 	try:
 		checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
@@ -168,7 +164,6 @@ def main(args):
 
 			points, target = torch.Tensor(points).transpose(2, 1).cuda(), target[:, 0].cuda()
 
-			# TODO: What does this mean ???
 			optimizer.zero_grad()
 
 			classifier = classifier.train()

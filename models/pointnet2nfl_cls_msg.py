@@ -1,7 +1,8 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
 import os, sys, pdb, torch.nn as nn, torch.nn.functional as F
-sys.path.append(['./', '../'])
+sys.path.append(['./'])
+sys.path.append(['../'])
 from NFL import NFL
 from data_utils.Dict2Object import Dict2Object
 from pointnet_util import PointNetSetAbstractionMsg, PointNetSetAbstraction

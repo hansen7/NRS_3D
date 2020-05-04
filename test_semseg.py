@@ -97,6 +97,7 @@ def main(args):
 	log_string("The number of test data is: %d" % len(TEST_DATASET_WHOLE_SCENE))
 
 	'''MODEL LOADING'''
+
 	model_name = os.listdir(experiment_dir + '/logs')[0].split('.')[0]   # good design
 	MODEL = importlib.import_module(model_name)
 	classifier = MODEL.get_model(NUM_CLASSES, with_rgb=WITH_RGB).cuda()
