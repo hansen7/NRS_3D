@@ -1,26 +1,25 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
 import torch.utils.data, sys, os, pdb, torch.nn as nn, torch.nn.functional as F
-sys.path.append(['./', '../'])
+sys.path.append('../')
 from pointnet import PointNetEncoder, feature_transform_reguliarzer
-from NFL import NFL
 from data_utils.Dict2Object import Dict2Object
 from torchsummary import summary
+from NFL import NFL
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 
 class get_model(nn.Module):
-	def __init__(self, k=40, normal_channel=False,
-				 cfg=Dict2Object(os.path.join(ROOT_DIR, 'pointnetnfl_cls.yaml'))):
+	def __init__(self, nfl_cfg, k=40, normal_channel=False):
 		super(get_model, self).__init__()
 		if normal_channel:
 			channel = 6
 		else:
 			channel = 3
 		self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=channel)
-		self.nfl = NFL(cfg)
+		self.nfl = NFL(nfl_cfg)
 		self.fc1 = nn.Linear(1024, 512)
 		self.fc2 = nn.Linear(512, 256)
 		self.fc3 = nn.Linear(256, k)
@@ -69,30 +68,11 @@ class get_loss(torch.nn.Module):
 		return total_loss
 
 
-# class Net(nn.Module):
-#     def __init__(self):
-#         super(Net, self).__init__()
-#         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-#         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-#         self.conv2_drop = nn.Dropout2d()
-#         self.fc1 = nn.Linear(320, 50)
-#         self.fc2 = nn.Linear(50, 10)
-#
-#     def forward(self, x):
-#         x = F.relu(F.max_pool2d(self.conv1(x), 2))
-#         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-#         x = x.view(-1, 320)
-#         x = F.relu(self.fc1(x))
-#         x = F.dropout(x, training=self.training)
-#         x = self.fc2(x)
-#         return F.log_softmax(x, dim=1)
-
-
 if __name__ == '__main__':
 	# 24, 1024, 3
 
-	cfg = Dict2Object(Path2Dict='../pointnetnfl_cls.yaml')
+	cfg = Dict2Object(Path2Dict='../nfl_config/pointnetnfl_cls.yaml')
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	model = get_model(cfg=cfg).to(device)
+	model = get_model(nfl_cfg=cfg).to(device)
 	# https://github.com/sksq96/pytorch-summary/issues/33
 	summary(model, (3, 1024))

@@ -7,7 +7,7 @@ from pointnet import PointNetEncoder, feature_transform_reguliarzer
 
 
 class get_model(nn.Module):
-	def __init__(self, k=40, normal_channel=False):
+	def __init__(self, k=40, normal_channel=False, **kwargs):
 		super(get_model, self).__init__()
 		if normal_channel:
 			channel = 6

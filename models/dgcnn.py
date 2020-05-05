@@ -7,6 +7,8 @@
 @Time: 2018/10/13 6:35 PM
 """
 
+#  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
+
 import sys, torch, torch.nn as nn, torch.nn.functional as F
 sys.path.append('../models')
 sys.path.append('../')
@@ -47,44 +49,11 @@ def get_graph_feature(x, k=20, idx=None):
 	return feature
 
 
-class PointNet(nn.Module):
-	def __init__(self, args, output_channels=40):
-		super(PointNet, self).__init__()
-		self.args = args
-		self.conv1 = nn.Conv1d(3, 64, kernel_size=1, bias=False)
-		self.conv2 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
-		self.conv3 = nn.Conv1d(64, 64, kernel_size=1, bias=False)
-		self.conv4 = nn.Conv1d(64, 128, kernel_size=1, bias=False)
-		self.conv5 = nn.Conv1d(128, args.emb_dims, kernel_size=1, bias=False)
-		self.bn1 = nn.BatchNorm1d(64)
-		self.bn2 = nn.BatchNorm1d(64)
-		self.bn3 = nn.BatchNorm1d(64)
-		self.bn4 = nn.BatchNorm1d(128)
-		self.bn5 = nn.BatchNorm1d(args.emb_dims)
-		self.linear1 = nn.Linear(args.emb_dims, 512, bias=False)
-		self.bn6 = nn.BatchNorm1d(512)
-		self.dp1 = nn.Dropout()
-		self.linear2 = nn.Linear(512, output_channels)
-
-	def forward(self, x):
-		x = F.relu(self.bn1(self.conv1(x)))
-		x = F.relu(self.bn2(self.conv2(x)))
-		x = F.relu(self.bn3(self.conv3(x)))
-		x = F.relu(self.bn4(self.conv4(x)))
-		x = F.relu(self.bn5(self.conv5(x)))
-		x = F.adaptive_max_pool1d(x, 1).squeeze()
-		x = F.relu(self.bn6(self.linear1(x)))
-		x = self.dp1(x)
-		x = self.linear2(x)
-		return x
-
-
 class DGCNN(nn.Module):
 	def __init__(self, args, output_channels=40):
 		super(DGCNN, self).__init__()
 		self.args = args
 		self.k = args.k
-
 		self.bn1 = nn.BatchNorm2d(64)
 		self.bn2 = nn.BatchNorm2d(64)
 		self.bn3 = nn.BatchNorm2d(128)
@@ -175,7 +144,7 @@ class DGCNN_NFL(nn.Module):
 								   self.bn5,
 								   nn.LeakyReLU(negative_slope=0.2))
 		self.linear1 = nn.Linear(args.emb_dims*2, 512, bias=False)
-		self.nfl = NFL(Dict2Object(args.cfg))
+		self.nfl = NFL(Dict2Object(args.nfl_cfg))
 		self.bn6 = nn.BatchNorm1d(512)
 		self.dp1 = nn.Dropout(p=args.dropout)
 		self.linear2 = nn.Linear(512, 256)
