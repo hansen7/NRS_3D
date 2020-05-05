@@ -1,70 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-@Author: Yue Wang
+@Author: Yue Wang, modified by Hanchen Wang, 2020
 @Contact: yuewangx@mit.edu
 @File: main.py
 @Time: 2018/10/13 10:39 PM
 """
 
 from __future__ import print_function
-import sys, os, torch, argparse, numpy as np, torch.nn as nn, torch.nn.functional as F, torch.optim as optim
+import sys, os, pdb, torch, argparse, numpy as np, torch.nn as nn, torch.optim as optim, sklearn.metrics as metrics
 sys.path.append('../')
 sys.path.append('../data_utils')
+from pc_utils import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from data import ModelNet40
-from model import PointNet, DGCNN, DGCNN_NFL
+from ModelNetDataLoader import ModelNetDataLoader
 from torch.utils.data import DataLoader
 from util import cal_loss, IOStream
-from data_utils.ModelNetDataLoader import ModelNetDataLoader
-import sklearn.metrics as metrics
-from pc_utils import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
+from model import DGCNN, DGCNN_NFL
+from tqdm import tqdm
 
 DATA_PATH = 'data/modelnet40_normal_resampled/'
 
-def _init_():
+def _init_(args):
 	if not os.path.exists('checkpoints'):
 		os.makedirs('checkpoints')
-	if not os.path.exists('checkpoints/' + args.exp_name):
-		os.makedirs('checkpoints/' + args.exp_name)
-	if not os.path.exists('checkpoints/' + args.exp_name + '/' + 'models'):
-		os.makedirs('checkpoints/' + args.exp_name + '/' + 'models')
-	os.system('cp main.py checkpoints' + '/' + args.exp_name + '/' + 'main.py.backup')
-	os.system('cp model.py checkpoints' + '/' + args.exp_name + '/' + 'model.py.backup')
-	os.system('cp util.py checkpoints' + '/' + args.exp_name + '/' + 'util.py.backup')
-	os.system('cp data.py checkpoints' + '/' + args.exp_name + '/' + 'data.py.backup')
+	if not os.path.exists('checkpoints/' + args.log_dir):
+		os.makedirs('checkpoints/' + args.log_dir)
+	if not os.path.exists('checkpoints/' + args.log_dir + '/' + 'models'):
+		os.makedirs('checkpoints/' + args.log_dir + '/' + 'models')
+	os.system('cp main.py checkpoints' + '/' + args.log_dir + '/' + 'main.py.backup')
+	os.system('cp model.py checkpoints' + '/' + args.log_dir + '/' + 'model.py.backup')
+	os.system('cp util.py checkpoints' + '/' + args.log_dir + '/' + 'util.py.backup')
+	os.system('cp data.py checkpoints' + '/' + args.log_dir + '/' + 'data.py.backup')
 
 
 def train(args, io):
-	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points,
-									   split='train', normal_channel=True)
-	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points,
-									  split='test', normal_channel=True)
-	train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True,
-												  num_workers=4)
+	# Load Data (includes normals)
+	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points, split='train')
+	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points, split='test')
+	train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4)
 	test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
-
-	# train_loader = DataLoader(ModelNet40(partition='train', num_points=args.num_points), num_workers=8,
-	# 						  batch_size=args.batch_size, shuffle=True, drop_last=True)
-	# test_loader = DataLoader(ModelNet40(partition='test', num_points=args.num_points), num_workers=8,
-	# 						 batch_size=args.test_batch_size, shuffle=True, drop_last=False)
-
 	device = torch.device("cuda" if args.cuda else "cpu")
 
-	# Try to load models
-	if args.model == 'pointnet':
-		model = PointNet(args).to(device)
-	elif args.model == 'dgcnn':
+	# Load Models, Allow Multiple GPUs
+	if args.model == 'dgcnn':
 		model = DGCNN(args).to(device)
 	elif args.model == 'dgcnn_nfl':
 		model = DGCNN_NFL(args).to(device)
 	else:
-		raise Exception("Not implemented")
-	print(str(model))
-
-	# allow using multiple GPUs
+		raise Exception("Specified Model is Not Implemented")
 	model = nn.DataParallel(model)
-	print("Let's use", torch.cuda.device_count(), "GPUs!")
 
 	if args.use_sgd:
 		print("Use SGD")
@@ -74,28 +59,27 @@ def train(args, io):
 		opt = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
 
 	scheduler = CosineAnnealingLR(opt, args.epochs, eta_min=args.lr)
-	criterion = cal_loss
+	criterion, best_test_acc = cal_loss, 0
 
-	best_test_acc = 0
+	for epoch in range(1, args.epochs+1):
 
-	for epoch in range(args.epochs):
+		'''=== Train ==='''
 		scheduler.step()
-		#########
-		# Train #
-		#########
 		train_loss, count = 0., 0.
 		train_pred, train_true = [], []
-
 		model.train()
 
-		for data, label in train_loader:
-			data, label = data.to(device), label.to(device).squeeze()
+		for batch_id, data in tqdm(enumerate(train_loader, 0), total=len(train_loader), smoothing=0.9):
+			pdb.set_trace()
+			points, label = data
+			# data, label = data.to(device), label.to(device).squeeze()
 			points = data.permute(0, 2, 1)
 
-			points = points.data.numpy()
-			points = random_point_dropout(points)
-			points[:, :, 0:3] = random_scale_point_cloud(points[:, :, 0:3])
-			points[:, :, 0:3] = random_shift_point_cloud(points[:, :, 0:3])
+			if args.data_aug:
+				points = points.data.numpy()
+				points = random_point_dropout(points)
+				points[:, :, 0:3] = random_scale_point_cloud(points[:, :, 0:3])
+				points[:, :, 0:3] = random_shift_point_cloud(points[:, :, 0:3])
 
 			points, target = torch.Tensor(points).transpose(2, 1).cuda(), target[:, 0].cuda()
 			batch_size = points.size()[0]
@@ -111,6 +95,7 @@ def train(args, io):
 			train_loss += loss.item() * batch_size
 			train_true.append(label.cpu().numpy())
 			train_pred.append(preds.detach().cpu().numpy())
+
 		train_true = np.concatenate(train_true)
 		train_pred = np.concatenate(train_pred)
 		outstr = 'Train %d, loss: %.6f, train acc: %.6f, train avg acc: %.6f' % (
@@ -121,14 +106,11 @@ def train(args, io):
 
 		io.cprint(outstr)
 
-		########
-		# Test #
-		########
-		test_loss = 0.0
-		count = 0.0
+		'''=== Test ==='''
+		test_loss, count = 0., 0.
 		model.eval()
-		test_pred = []
-		test_true = []
+		test_pred, test_pred = [], []
+
 		for data, label in test_loader:
 			data, label = data.to(device), label.to(device).squeeze()
 			data = data.permute(0, 2, 1)
@@ -149,14 +131,16 @@ def train(args, io):
 																			  test_acc,
 																			  avg_per_class_acc)
 		io.cprint(outstr)
-		if test_acc >= best_test_acc:
+		if test_acc > best_test_acc:
 			best_test_acc = test_acc
-			torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % args.exp_name)
+			torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % args.log_dir)
 
 
 def test(args, io):
-	test_loader = DataLoader(ModelNet40(partition='test', num_points=args.num_points),
-							 batch_size=args.test_batch_size, shuffle=True, drop_last=False)
+
+	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points,
+									  split='test', normal_channel=True)
+	test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
 	device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -165,14 +149,11 @@ def test(args, io):
 	model = nn.DataParallel(model)
 	model.load_state_dict(torch.load(args.model_path))
 	model = model.eval()
-	test_acc = 0.0
-	count = 0.0
-	test_true = []
-	test_pred = []
+	test_true, test_pred = [], []
+
 	for data, label in test_loader:
 		data, label = data.to(device), label.to(device).squeeze()
 		data = data.permute(0, 2, 1)
-		batch_size = data.size()[0]
 		logits = model(data)
 		preds = logits.max(dim=1)[1]
 		test_true.append(label.cpu().numpy())
@@ -186,62 +167,43 @@ def test(args, io):
 
 
 if __name__ == "__main__":
-	# Training settings
+
+	''' Parse Args for Training'''
 	parser = argparse.ArgumentParser(description='Point Cloud Recognition')
-	parser.add_argument('--exp_name', type=str, default='exp', metavar='N',
-						help='Name of the experiment')
-	parser.add_argument('--model', type=str, default='dgcnn', metavar='N',
-						choices=['pointnet', 'dgcnn'],
-						help='Model to use, [pointnet, dgcnn]')
-	parser.add_argument('--dataset', type=str, default='modelnet40', metavar='N',
-						choices=['modelnet40'])
-	parser.add_argument('--batch_size', type=int, default=32, metavar='batch_size',
-						help='Size of batch)')
-	parser.add_argument('--test_batch_size', type=int, default=16, metavar='batch_size',
-						help='Size of batch)')
-	parser.add_argument('--epochs', type=int, default=250, metavar='N',
-						help='number of episode to train ')
-	parser.add_argument('--use_sgd', type=bool, default=True,
-						help='Use SGD')
-	parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
-						help='learning rate (default: 0.001, 0.1 if using sgd)')
-	parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
-						help='SGD momentum (default: 0.9)')
-	parser.add_argument('--no_cuda', type=bool, default=False,
-						help='enables CUDA training')
-	parser.add_argument('--seed', type=int, default=1, metavar='S',
-						help='random seed (default: 1)')
-	parser.add_argument('--eval', type=bool, default=False,
-						help='evaluate the model')
-	parser.add_argument('--num_points', type=int, default=1024,
-						help='num of points to use')
-	parser.add_argument('--dropout', type=float, default=0.5,
-						help='dropout rate')
-	parser.add_argument('--cfg', type=str, default='dgcnnnfl_cls.yaml',
-						help='config for NFL modules')
-	parser.add_argument('--emb_dims', type=int, default=1024, metavar='N',
-						help='Dimension of embeddings')
-	parser.add_argument('--k', type=int, default=20, metavar='N',
-						help='Num of nearest neighbors to use')
-	parser.add_argument('--model_path', type=str, default='', metavar='N',
-						help='Pre-trained model path')
+
+	parser.add_argument('--model', type=str, default='dgcnn',
+						choices=['dgcnn', 'dgcnn_nfl'],
+						help='Model to use, [dgcnn, dgcnn_nfl]')
+	parser.add_argument('--log_dir', type=str, default='cls_vanilla', help='LOG')
+	parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
+	parser.add_argument('--batch_size', type=int, default=32, help='Training Batch Size')
+	# parser.add_argument('--test_batch_size', type=int, default=16, help='Testing Batch Size')
+	parser.add_argument('--epochs', type=int, default=250, help='number of training epochs')
+	parser.add_argument('--k', type=int, default=20, help='Num of nearest neighbors to use')
+	parser.add_argument('--emb_dims', type=int, default=1024, help='Dimension of Embeddings')
+	parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
+	parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+	parser.add_argument('--num_points', type=int, default=1024, help='num of points of each object')
+	parser.add_argument('--cfg', type=str, default='dgcnnnfl_cls.yaml', help='config for NFL modules')
+	parser.add_argument('--model_path', type=str, default='', help='Pre-Trained model path, only used in test')
+	parser.add_argument('--use_sgd', action='store_true', default=True, help='Use SGD Optimiser[default: True]')
+	parser.add_argument('--data_aug', action='store_true', default=True, help='Data Augmentation[default: True]')
+	parser.add_argument('--lr', type=float, default=0.001, help='learning rate (default: 0.001, 0.1 if using sgd)')
 	args = parser.parse_args()
 
-	_init_()
-
-	io = IOStream('checkpoints/' + args.exp_name + '/run.log')
+	''' Create Log Folders and Backup Scripts'''
+	_init_(args)
+	io = IOStream(r'./checkpoints/' + args.log_dir + '/run.log')
 	io.cprint(str(args))
-
-	args.cuda = not args.no_cuda and torch.cuda.is_available()
 	torch.manual_seed(args.seed)
-	if args.cuda:
-		io.cprint(
-			'Using GPU : ' + str(torch.cuda.current_device()) + ' from ' + str(torch.cuda.device_count()) + ' devices')
+
+	if torch.cuda.is_available():
+		print("Let's use", torch.cuda.device_count(), "GPUs!")
+		os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+		io.cprint("Let's use" + str(torch.cuda.device_count()) + "GPUs!")
 		torch.cuda.manual_seed(args.seed)
 	else:
 		io.cprint('Using CPU')
 
-	if not args.eval:
-		train(args, io)
-	else:
-		test(args, io)
+	''' Train the Model'''
+	train(args, io)
