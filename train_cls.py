@@ -1,8 +1,6 @@
 """
-Author: Benny
-Date: Nov 2019
+Author: Benny and Hanchen, hw501@cam.ac.uk
 """
-#  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
 import numpy as np
 import pdb, argparse, os, datetime, logging, sys, provider, importlib, shutil, time, torch
@@ -112,9 +110,14 @@ def main(args):
 	shutil.copy('./models/pointnet_util.py', str(experiment_dir))
 	shutil.copy('./pointnetnfl_cls.yaml', str(experiment_dir))
 
-	classifier = MODEL.get_model(num_class, normal_channel=args.normal).cuda()
-	criterion = MODEL.get_loss().cuda()
-
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	classifier = MODEL.get_model(num_class, normal_channel=args.normal).to(device)
+	criterion = MODEL.get_loss().to(device)
+	classifier = torch.nn.DataParallel(classifier)
+	print("===================")
+	print("Let's use", torch.cuda.device_count(), "GPUs!")
+	print("===================")
+	
 	try:
 		checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
 		start_epoch = checkpoint['epoch']
