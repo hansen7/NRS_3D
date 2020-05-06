@@ -7,7 +7,7 @@ from pathlib import Path
 class TrainLogger:
 
 	def __init__(self, args, name='Model', subfold='classification', cls2name=None):
-		self.step = 0
+		self.step = 1
 		self.epoch = 1
 		self.args = args
 		self.name = name
@@ -56,6 +56,7 @@ class TrainLogger:
 		if training:
 			self.logger.info('\nEpoch %d/%d:' % (self.epoch, self.args.epoch))
 
+	# TODO: check whether the step increase during the testing or not
 	def cls_step_update(self, pred, gt, loss):
 		self.step += 1
 		self.gt.append(gt)
@@ -115,7 +116,5 @@ class TrainLogger:
 		self.logger.info('Best Class Acc {} at Epoch {}'.format(self.best_instance_acc, self.best_class_epoch))
 		self.logger.info('Best Instance Acc {} at Epoch {}'.format(self.best_instance_acc, self.best_instance_epoch))
 
-	#def cout_nflconfig(self):
-	#	if self.args.cout_nflconfig:
-
-	
+	# def cout_nflconfig(self):
+	# 	if self.args.cout_nflconfig:

@@ -133,6 +133,9 @@ def main(args):
 
 
 if __name__ == '__main__':
+	''' Parse Args for Training'''
 	args = parse_args()
 	args.nfl_cfg = os.path.join('nfl_config', args.nfl_cfg + '.yaml')
+
+	''' Train the Model'''
 	main(args)

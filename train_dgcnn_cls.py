@@ -5,7 +5,7 @@
 @Contact: yuewangx@mit.edu
 @File: train_dgcnn_cls.py
 @Time: 2018/10/13 10:39 PM
-modified by Hanchen Wang, 2020
+@ modified by Hanchen Wang, 2020
 """
 
 import sys, os, pdb, torch, shutil, argparse, numpy as np, torch.nn as nn, torch.nn.functional as F
@@ -35,6 +35,28 @@ def cal_loss(pred, gold, smoothing=True):
 	return loss
 
 
+def parse_args():
+	parser = argparse.ArgumentParser(description='Point Cloud Recognition')
+	parser.add_argument('--gpu', type=str, default='0', help='GPU')
+	parser.add_argument('--log_dir', type=str, default='cls_vanilla', help='LOG')
+	parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
+	parser.add_argument('--batch_size', type=int, default=32, help='Training Batch Size')
+	parser.add_argument('--epoch', type=int, default=250, help='number of training epochs')
+	parser.add_argument('--k', type=int, default=20, help='Num of nearest neighbors to use')
+	parser.add_argument('--emb_dims', type=int, default=1024, help='Dimension of Embeddings')
+	parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
+	parser.add_argument('--num_point', type=int, default=1024, help='num of points of each object')
+	parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+	parser.add_argument('--nfl_cfg', type=str, default='dgcnnnfl_cls', help='config for NFL modules')
+	parser.add_argument('--model', type=str, default='dgcnn', help='Model to use, [dgcnn, dgcnn_nfl]')
+	parser.add_argument('--model_path', type=str, default='', help='Pre-Trained model path, only used in test')
+	parser.add_argument('--use_sgd', action='store_true', default=False, help='Use SGD Optimiser[default: True]')
+	parser.add_argument('--data_aug', action='store_true', default=False, help='Data Augmentation[default: True]')
+	parser.add_argument('--lr', type=float, default=0.001, help='learning rate (default: 0.001, 0.1 if using sgd)')
+
+	return parser.parse_args()
+
+
 def main(args):
 	
 	# Create Loggers and Backup Scripts
@@ -49,8 +71,8 @@ def main(args):
 	# Load Data (excludes normals)
 	MyLogger.logger.info('Load dataset ...')
 	DATA_PATH = 'data/modelnet40_normal_resampled/'
-	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points, split='train', normal_channel=False)
-	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_points, split='test', normal_channel=False)
+	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='train', normal_channel=False)
+	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='test', normal_channel=False)
 	train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4)
 	test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=6, shuffle=False, num_workers=4)
 	# use smaller batch size in test_loader (no effect on training), to make it applicable on a single GTX 1080 (8GB Mem)
@@ -140,27 +162,7 @@ def main(args):
 if __name__ == "__main__":
 
 	''' Parse Args for Training'''
-	parser = argparse.ArgumentParser(description='Point Cloud Recognition')
-	parser.add_argument('--model', type=str, default='dgcnn',
-						choices=['dgcnn', 'dgcnn_nfl'],
-						help='Model to use, [dgcnn, dgcnn_nfl]')
-	parser.add_argument('--gpu', type=str, default='0', help='GPU')
-	parser.add_argument('--log_dir', type=str, default='cls_vanilla', help='LOG')
-	parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
-	parser.add_argument('--batch_size', type=int, default=32, help='Training Batch Size')
-	# parser.add_argument('--test_batch_size', type=int, default=16, help='Testing Batch Size')
-	parser.add_argument('--epoch', type=int, default=250, help='number of training epochs')
-	parser.add_argument('--k', type=int, default=20, help='Num of nearest neighbors to use')
-	parser.add_argument('--emb_dims', type=int, default=1024, help='Dimension of Embeddings')
-	parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
-	parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
-	parser.add_argument('--num_points', type=int, default=1024, help='num of points of each object')
-	parser.add_argument('--nfl_cfg', type=str, default='dgcnnnfl_cls', help='config for NFL modules')
-	parser.add_argument('--model_path', type=str, default='', help='Pre-Trained model path, only used in test')
-	parser.add_argument('--use_sgd', action='store_true', default=True, help='Use SGD Optimiser[default: True]')
-	parser.add_argument('--data_aug', action='store_true', default=True, help='Data Augmentation[default: True]')
-	parser.add_argument('--lr', type=float, default=0.001, help='learning rate (default: 0.001, 0.1 if using sgd)')
-	args = parser.parse_args()
+	args = parse_args()
 	args.nfl_cfg = os.path.join('nfl_config', args.nfl_cfg + '.yaml')
 
 	''' Train the Model'''
