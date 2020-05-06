@@ -53,7 +53,6 @@ class DGCNN(nn.Module):
 	def __init__(self, args, output_channels=40):
 		super(DGCNN, self).__init__()
 		self.args = args
-		self.k = args.k
 		self.bn1 = nn.BatchNorm2d(64)
 		self.bn2 = nn.BatchNorm2d(64)
 		self.bn3 = nn.BatchNorm2d(128)
@@ -85,19 +84,19 @@ class DGCNN(nn.Module):
 
 	def forward(self, x):
 		batch_size = x.size(0)
-		x = get_graph_feature(x, k=self.k)
+		x = get_graph_feature(x, k=self.args.k)
 		x = self.conv1(x)
 		x1 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x1, k=self.k)
+		x = get_graph_feature(x1, k=self.args.k)
 		x = self.conv2(x)
 		x2 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x2, k=self.k)
+		x = get_graph_feature(x2, k=self.args.k)
 		x = self.conv3(x)
 		x3 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x3, k=self.k)
+		x = get_graph_feature(x3, k=self.args.k)
 		x = self.conv4(x)
 		x4 = x.max(dim=-1, keepdim=False)[0]
 
@@ -120,8 +119,6 @@ class DGCNN_NFL(nn.Module):
 	def __init__(self, args, output_channels=40):
 		super(DGCNN_NFL, self).__init__()
 		self.args = args
-		self.k = args.k
-		self.cfg = args.cfg
 		self.bn1 = nn.BatchNorm2d(64)
 		self.bn2 = nn.BatchNorm2d(64)
 		self.bn3 = nn.BatchNorm2d(128)
@@ -154,19 +151,19 @@ class DGCNN_NFL(nn.Module):
 
 	def forward(self, x):
 		batch_size = x.size(0)
-		x = get_graph_feature(x, k=self.k)
+		x = get_graph_feature(x, k=self.args.k)
 		x = self.conv1(x)
 		x1 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x1, k=self.k)
+		x = get_graph_feature(x1, k=self.args.k)
 		x = self.conv2(x)
 		x2 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x2, k=self.k)
+		x = get_graph_feature(x2, k=self.args.k)
 		x = self.conv3(x)
 		x3 = x.max(dim=-1, keepdim=False)[0]
 
-		x = get_graph_feature(x3, k=self.k)
+		x = get_graph_feature(x3, k=self.args.k)
 		x = self.conv4(x)
 		x4 = x.max(dim=-1, keepdim=False)[0]
 

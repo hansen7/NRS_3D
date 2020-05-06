@@ -37,11 +37,14 @@ def cal_loss(pred, gold, smoothing=True):
 
 def main(args):
 	
-	# Create Log Folders and Backup Scripts
+	# Create Loggers and Backup Scripts
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 	os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-	MyLogger = TrainLogger(args, name='Model', subfolder='cls')  # automatically create log_dir and setup
-	shutil.copy(os.path.join('nfl_config', args.nfl_cfg + '.yaml'), str(MyLogger.experiment_dir))
+	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
+	writer = SummaryWriter(os.path.join(MyLogger.experiment_dir, 'runs'))
+	shutil.copy(os.path.join('models', 'dgcnn.py'), MyLogger.log_dir)
+	shutil.copy(os.path.abspath(__file__), MyLogger.log_dir)
+	shutil.copy(args.nfl_cfg, MyLogger.log_dir)
 
 	# Load Data (excludes normals)
 	MyLogger.logger.info('Load dataset ...')
@@ -72,10 +75,10 @@ def main(args):
 		print("Use Adam Optimiser")
 		opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
 
-	scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, args.epochs, eta_min=args.lr)
+	scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, args.epoch, eta_min=args.lr)
 	writer = SummaryWriter(os.path.join(str(MyLogger.experiment_dir), 'runs'))
 
-	for epoch in range(1, args.epochs+1):
+	for epoch in range(1, args.epoch+1):
 
 		'''=== Train ==='''
 		MyLogger.cls_epoch_init()
@@ -83,7 +86,6 @@ def main(args):
 		model.train()
 
 		for _, data in tqdm(enumerate(train_loader, 0), total=len(train_loader), smoothing=0.9):
-			pdb.set_trace()
 			points, label = data  # points -> (batch_size, num_points, 3),
 
 			if args.data_aug:
@@ -100,8 +102,10 @@ def main(args):
 			loss = cal_loss(logits, label)
 			loss.backward()
 			opt.step()
-			preds = logits.max(dim=1)[1]
-			MyLogger.cls_step_update(preds.data.max(1)[1], label.long().data, loss.data())
+			
+			MyLogger.cls_step_update(logits.max(1)[1].cpu().numpy(), 
+									 label.long().cpu().numpy(), 
+									 loss.cpu().detach().numpy())
 		MyLogger.cls_epoch_summary(writer=writer, training=True)
 
 		'''=== Test ==='''
@@ -113,23 +117,24 @@ def main(args):
 			points, label = points.transpose(2, 1).cuda(), label[:, 0].type(torch.int64).cuda()
 			logits = model(points)
 			loss = cal_loss(logits, label)
-			preds = logits.max(dim=1)[1]
-			MyLogger.cls_step_update(preds.data.max(1)[1], label.long().data, loss.data)
-			MyLogger.cls_epoch_summary(writer=writer, training=False)
+			MyLogger.cls_step_update(logits.max(1)[1].cpu().numpy(), 
+									 label.long().cpu().numpy(), 
+									 loss.cpu().detach().numpy())
+		MyLogger.cls_epoch_summary(writer=writer, training=False)
 
-			if MyLogger.save_model:
-				state = {
-					'step': MyLogger.step,
-					'epoch': MyLogger.epoch,
-					'instance_acc': MyLogger.best_instance_acc,
-					'best_class_acc': MyLogger.best_class_acc,
-					'best_class_epoch': MyLogger.best_class_epoch,
-					'model_state_dict': model.state_dict(),
-					'optimizer_state_dict': model.state_dict(),
-				}
-				torch.save(state, MyLogger.savepath)
+		if MyLogger.save_model:
+			state = {
+				'step': MyLogger.step,
+				'epoch': MyLogger.best_instance_epoch,
+				'instance_acc': MyLogger.best_instance_acc,
+				'best_class_acc': MyLogger.best_class_acc,
+				'best_class_epoch': MyLogger.best_class_epoch,
+				'model_state_dict': model.state_dict(),
+				'optimizer_state_dict': model.state_dict(),
+			}
+			torch.save(state, MyLogger.savepath)
 
-		MyLogger.cls_train_summary()
+	MyLogger.cls_train_summary()
 
 
 if __name__ == "__main__":
@@ -144,13 +149,13 @@ if __name__ == "__main__":
 	parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
 	parser.add_argument('--batch_size', type=int, default=32, help='Training Batch Size')
 	# parser.add_argument('--test_batch_size', type=int, default=16, help='Testing Batch Size')
-	parser.add_argument('--epochs', type=int, default=250, help='number of training epochs')
+	parser.add_argument('--epoch', type=int, default=250, help='number of training epochs')
 	parser.add_argument('--k', type=int, default=20, help='Num of nearest neighbors to use')
 	parser.add_argument('--emb_dims', type=int, default=1024, help='Dimension of Embeddings')
 	parser.add_argument('--momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
 	parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 	parser.add_argument('--num_points', type=int, default=1024, help='num of points of each object')
-	parser.add_argument('--nfl_cfg', type=str, default='dgcnnnfl_cls.yaml', help='config for NFL modules')
+	parser.add_argument('--nfl_cfg', type=str, default='dgcnnnfl_cls', help='config for NFL modules')
 	parser.add_argument('--model_path', type=str, default='', help='Pre-Trained model path, only used in test')
 	parser.add_argument('--use_sgd', action='store_true', default=True, help='Use SGD Optimiser[default: True]')
 	parser.add_argument('--data_aug', action='store_true', default=True, help='Data Augmentation[default: True]')

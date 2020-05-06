@@ -32,8 +32,8 @@ def main(args):
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 	os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-	MyLogger = TrainLogger(args, name='Model', subfolder='cls')  # automatically create log_dir and setup
-	writer = SummaryWriter(os.path.join(str(MyLogger.experiment_dir), 'runs'))
+	'''Set up Loggers and Load Data'''
+	MyLogger = TrainLogger(args, name='Model', subfold='cls')
 	MyLogger.logger.info('Load dataset ...')
 	DATA_PATH = 'data/modelnet40_normal_resampled/'
 	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='train', normal_channel=args.normal)
@@ -41,15 +41,17 @@ def main(args):
 	trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4)
 	testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
-	'''MODEL LOADING'''
+	'''Model Loading and Files Backup'''
 	num_class = 40
 	MODEL = importlib.import_module(args.model)
-	shutil.copy('./models/%s.py' % args.model, str(MyLogger.experiment_dir))
-	shutil.copy(os.path.join('nfl_config', args.nfl_cfg + '.yaml'), str(MyLogger.experiment_dir))
+	shutil.copy(args.nfl_cfg, MyLogger.log_dir)
+	shutil.copy(os.path.abspath(__file__), MyLogger.log_dir)
+	shutil.copy('./models/%s.py' % args.model, MyLogger.log_dir)
+	writer = SummaryWriter(os.path.join(MyLogger.experiment_dir, 'runs'))
 
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	classifier = MODEL.get_model(
-		num_class, normal_channel=args.normal, nfl_cfg=Dict2Object(args.nfl_cfg)).to(device)
+		k=num_class, normal_channel=args.normal, nfl_cfg=Dict2Object(args.nfl_cfg)).to(device)
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
 	print("===================")
@@ -61,7 +63,7 @@ def main(args):
 		classifier.load_state_dict(checkpoint['model_state_dict'])
 		MyLogger.update_from_checkpoints(checkpoint)
 	except:
-		MyLogger.logger.info('No existing model, starting training from scratch...')
+		MyLogger.logger.info('No pre-trained model, start training from scratch...')
 
 	'''Optimiser and Scheduler'''
 	if args.optimizer == 'Adam':
@@ -76,16 +78,14 @@ def main(args):
 		optimizer = torch.optim.SGD(classifier.parameters(), lr=args.lr*100, momentum=0.9)
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)
 
-	# MyLogger.logger.info('Start Training...')
 	for epoch in range(MyLogger.epoch, args.epoch + 1):
-		'''TRAINING'''
+		'''Training'''
 		scheduler.step()
 		classifier.train()
 		MyLogger.cls_epoch_init()
 		# writer.add_scalar('learning rate', scheduler.get_lr()[-1], global_step)
 
 		for points, target in tqdm(trainDataLoader, total=len(trainDataLoader), smoothing=0.9):
-			pdb.set_trace()
 			# Data Augmentation
 			points = random_point_dropout(points.data.numpy())
 			points[:, :, 0:3] = random_scale_point_cloud(points[:, :, 0:3])
@@ -98,10 +98,11 @@ def main(args):
 			loss = criterion(pred, target.long(), trans_feat)
 			loss.backward()
 			optimizer.step()
-
-			MyLogger.cls_step_update(pred.data.max(1)[1], target.long().data, loss.data)
+			MyLogger.cls_step_update(pred.data.max(1)[1].cpu().numpy(), 
+									 target.long().cpu().numpy(), 
+									 loss.cpu().detach().numpy())
 		MyLogger.cls_epoch_summary(writer=writer, training=True)
-
+		
 		'''Validating'''
 		with torch.no_grad():
 			classifier.eval()
@@ -111,13 +112,15 @@ def main(args):
 				points, target = points.transpose(2, 1).cuda(), target[:, 0].cuda()
 				pred, trans_feat = classifier(points)
 				loss = criterion(pred, target.long(), trans_feat)
-				MyLogger.cls_step_update(pred.data.max(1)[1], target.long().data, loss.data)
+				MyLogger.cls_step_update(pred.data.max(1)[1].cpu().numpy(),
+										 target.long().cpu().numpy(),
+										 loss.cpu().detach().numpy())
+			
 			MyLogger.cls_epoch_summary(writer=writer, training=False)
-
 			if MyLogger.save_model:
 				state = {
 					'step': MyLogger.step,
-					'epoch': MyLogger.epoch,
+					'epoch': MyLogger.best_instance_epoch,
 					'instance_acc': MyLogger.best_instance_acc,
 					'best_class_acc': MyLogger.best_class_acc,
 					'best_class_epoch': MyLogger.best_class_epoch,
@@ -125,7 +128,7 @@ def main(args):
 					'optimizer_state_dict': optimizer.state_dict(),
 				}
 				torch.save(state, MyLogger.savepath)
-
+		# pdb.set_trace()
 	MyLogger.cls_train_summary()
 
 
