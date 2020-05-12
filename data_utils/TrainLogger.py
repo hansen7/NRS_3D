@@ -54,9 +54,9 @@ class TrainLogger:
 	def cls_epoch_init(self, training=True):
 		self.loss, self.count, self.pred, self.gt = 0., 0., [], []
 		if training:
-			self.logger.info('\nEpoch %d/%d:' % (self.epoch, self.args.epoch))
+			self.logger.info('Epoch %d/%d:' % (self.epoch, self.args.epoch))
 
-	# TODO: check whether the step increase during the testing or not
+	# TODO: check whether the step increase during the testing or not in default setting
 	def cls_step_update(self, pred, gt, loss):
 		self.step += 1
 		self.gt.append(gt)

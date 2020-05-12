@@ -33,7 +33,7 @@ def main(args):
 	os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 	'''Set up Loggers and Load Data'''
-	MyLogger = TrainLogger(args, name='Model', subfold='cls')
+	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
 	MyLogger.logger.info('Load dataset ...')
 	DATA_PATH = 'data/modelnet40_normal_resampled/'
 	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='train', normal_channel=args.normal)
@@ -49,14 +49,12 @@ def main(args):
 	shutil.copy('./models/%s.py' % args.model, MyLogger.log_dir)
 	writer = SummaryWriter(os.path.join(MyLogger.experiment_dir, 'runs'))
 
+	# allow multiple GPU running
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-	classifier = MODEL.get_model(
-		k=num_class, normal_channel=args.normal, nfl_cfg=Dict2Object(args.nfl_cfg)).to(device)
+	classifier = MODEL.get_model(k=num_class, normal_channel=args.normal, nfl_cfg=Dict2Object(args.nfl_cfg)).to(device)
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
-	print("===================")
-	print("Let's use", torch.cuda.device_count(), "GPUs: %s!" % args.gpu)
-	print("===================")
+	print("="*33, "\n", "Let's use", torch.cuda.device_count(), "GPUs, Indices are: %s!" % args.gpu, "\n", "="*33)
 	
 	try:
 		checkpoint = torch.load(MyLogger.savepath)
