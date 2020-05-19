@@ -8,7 +8,7 @@ import pdb
 
 # STN -> Spatial Transformer Network
 class STN3d(nn.Module):
-	def __init__(self, channel):
+	def __init__(self, channel):  # channel = 3
 		super(STN3d, self).__init__()
 		self.conv1 = torch.nn.Conv1d(channel, 64, 1)  # in-channel, out-channel, kernel size
 		self.conv2 = torch.nn.Conv1d(64, 128, 1)

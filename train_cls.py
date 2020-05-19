@@ -105,8 +105,7 @@ def main(args):
 		with torch.no_grad():
 			classifier.eval()
 			MyLogger.cls_epoch_init(training=False)
-			for _, data in tqdm(enumerate(testDataLoader), total=len(testDataLoader)):
-				points, target = data
+			for points, target in tqdm(testDataLoader, total=len(testDataLoader), smoothing=0.9):
 				points, target = points.transpose(2, 1).cuda(), target[:, 0].cuda()
 				pred, trans_feat = classifier(points)
 				loss = criterion(pred, target.long(), trans_feat)
