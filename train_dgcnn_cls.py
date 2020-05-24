@@ -13,7 +13,7 @@ sys.path.append('models')
 sys.path.append('data_utils')
 from pc_utils import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
 from ModelNetDataLoader import ModelNetDataLoader
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 from TrainLogger import TrainLogger
 from dgcnn import DGCNN, DGCNN_NFL
 from tqdm import tqdm

@@ -10,8 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 class get_model(nn.Module):
-	def __init__(self, num_class, normal_channel=True,
-				 cfg=Dict2Object(os.path.join(ROOT_DIR, 'pointnetnfl_cls.yaml'))):
+	def __init__(self, num_class, nfl_cfg, normal_channel=True,):
 		super(get_model, self).__init__()
 		in_channel = 6 if normal_channel else 3
 		self.normal_channel = normal_channel
@@ -21,7 +20,7 @@ class get_model(nn.Module):
 										  in_channel=128 + 3, mlp=[128, 128, 256], group_all=False)
 		self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None,
 										  in_channel=256 + 3, mlp=[256, 512, 1024], group_all=True)
-		self.nfl = NFL(cfg)
+		self.nfl = NFL(nfl_cfg)
 		self.fc1 = nn.Linear(1024, 512)
 		self.bn1 = nn.BatchNorm1d(512)
 		self.drop1 = nn.Dropout(0.4)

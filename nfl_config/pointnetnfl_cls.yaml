@@ -7,7 +7,7 @@ MODEL:
     DH: 3 # or 3
     DW: 3 # or 3
     N_MUL: 2 # or 2
-    N_PER_GROUP: 32 # or 32 or 128
+    N_PER_GROUP: 64 # or 32 or 128
     FC:
         N_FC: 1024
         B_FC: False
