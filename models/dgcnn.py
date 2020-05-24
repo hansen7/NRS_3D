@@ -9,7 +9,7 @@
 
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import sys, torch, torch.nn as nn, torch.nn.functional as F
+import sys, pdb, torch, torch.nn as nn, torch.nn.functional as F
 sys.path.append('../models')
 sys.path.append('../')
 from data_utils.Dict2Object import Dict2Object
@@ -24,26 +24,20 @@ def knn(x, k):
 
 
 def get_graph_feature(x, k=20, idx=None):
-	batch_size = x.size(0)
-	num_points = x.size(2)
+	
+	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	batch_size, num_dims, num_points = x.size()
 	x = x.view(batch_size, -1, num_points)
 	if idx is None:
 		idx = knn(x, k=k)   # (batch_size, num_points, k)
-	device = torch.device('cuda')
-	device = torch.device('cpu')
 	idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
-
-	idx = idx + idx_base
+	idx += idx_base
 	idx = idx.view(-1)
-	_, num_dims, _ = x.size()
 
 	x = x.transpose(2, 1).contiguous()
-	# (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims)
-	#  batch_size * num_points * k + range(0, batch_size*num_points)
 	feature = x.view(batch_size*num_points, -1)[idx, :]
 	feature = feature.view(batch_size, num_points, k, num_dims)
 	x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
-
 	feature = torch.cat((feature-x, x), dim=3).permute(0, 3, 1, 2)
 
 	return feature

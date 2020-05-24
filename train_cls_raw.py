@@ -129,15 +129,17 @@ def main(args):
 		# for points, target in tqdm(trainDataLoader, total=len(trainDataLoader), smoothing=0.9):
 		# Data Augmentation
 		while TRAIN_DATASET.has_next_batch():
-			pdb.set_trace()
 			points, target = TRAIN_DATASET.next_batch()
+			if len(points) < args.batch_size:
+				TRAIN_DATASET.current_file_idx += 1
+				# break
 			rotated_data = rotate_point_cloud(points)
 			jittered_data = jitter_point_cloud(rotated_data)
 
 			# points = random_point_dropout(points.data.numpy())
 			# points[:, :, 0:3] = random_scale_point_cloud(points[:, :, 0:3])
 			# points[:, :, 0:3] = random_shift_point_cloud(points[:, :, 0:3])
-			points, target = torch.Tensor(jittered_data).transpose(2, 1).cuda(), target[:, 0].cuda()
+			points, target = torch.Tensor(jittered_data).transpose(2, 1).cuda(), torch.Tensor(target).cuda()
 
 			# FP and BP
 			optimizer.zero_grad()
@@ -149,15 +151,22 @@ def main(args):
 									 target.long().cpu().numpy(), 
 									 loss.cpu().detach().numpy())
 		MyLogger.cls_epoch_summary(writer=writer, training=True)
-		
+		TRAIN_DATASET.reset()
+
 		'''Validating'''
 		with torch.no_grad():
 			classifier.eval()
 			MyLogger.cls_epoch_init(training=False)
 
+			counter = 0
 			while TEST_DATASET.has_next_batch():
+				counter += 1
 				points, target = TEST_DATASET.next_batch()
-				points, target = points.transpose(2, 1).cuda(), target[:, 0].cuda()
+				if len(points) < args.batch_size:
+					TEST_DATASET.current_file_idx += 1
+					print(counter)
+					# break
+				points, target = torch.Tensor(points).transpose(2, 1).cuda(), torch.Tensor(target).cuda()
 				pred, trans_feat = classifier(points)
 				loss = criterion(pred, target.long(), trans_feat)
 				MyLogger.cls_step_update(pred.data.max(1)[1].cpu().numpy(),
@@ -165,6 +174,7 @@ def main(args):
 										 loss.cpu().detach().numpy())
 			
 			MyLogger.cls_epoch_summary(writer=writer, training=False)
+			TEST_DATASET.reset()
 			if MyLogger.save_model:
 				state = {
 					'step': MyLogger.step,
@@ -190,7 +200,7 @@ class ModelNetH5Dataset(object):
 		self.npoints = npoints
 		self.shuffle = shuffle
 		self.h5_files = self.getDataFiles(self.list_filename)
-		# self.reset()
+		self.reset()
 		""" reset order of h5 files """
 		self.file_idxs = np.arange(0, len(self.h5_files))
 		if self.shuffle:
@@ -217,16 +227,6 @@ class ModelNetH5Dataset(object):
 		np.random.shuffle(idx)
 		return data[idx, ...], labels[idx], idx
 
-	# @staticmethod
-	# def _augment_batch_data(batch_data):
-	# 	rotated_data = data_utils.rotate_point_cloud(batch_data)
-	# 	rotated_data = data_utils.rotate_perturbation_point_cloud(rotated_data)
-	# 	jittered_data = data_utils.random_scale_point_cloud(rotated_data[:, :, 0:3])
-	# 	jittered_data = data_utils.shift_point_cloud(jittered_data)
-	# 	jittered_data = data_utils.jitter_point_cloud(jittered_data)
-	# 	rotated_data[:, :, 0:3] = jittered_data
-	# 	return data_utils.shuffle_points(rotated_data)
-
 	def _get_data_filename(self):
 		return self.h5_files[self.file_idxs[self.current_file_idx]]
 
@@ -239,9 +239,6 @@ class ModelNetH5Dataset(object):
 
 	def _has_next_batch_in_file(self):
 		return self.batch_idx * self.batch_size < self.current_data.shape[0]
-
-	# def num_channel(self):
-	# 	return 3
 
 	def has_next_batch(self):
 		if (self.current_data is None) or (not self._has_next_batch_in_file()):
@@ -256,15 +253,18 @@ class ModelNetH5Dataset(object):
 		""" returned dimension may be smaller than self.batch_size """
 		start_idx = self.batch_idx * self.batch_size
 		end_idx = min((self.batch_idx + 1) * self.batch_size, self.current_data.shape[0])
-		# bsize = end_idx - start_idx
-		# batch_label = np.zeros(bsize, dtype=np.int32)
 		data_batch = self.current_data[start_idx:end_idx, 0:self.npoints, :].copy()
 		label_batch = self.current_label[start_idx:end_idx].copy()
 		self.batch_idx += 1
-		# if augment:
-		# 	data_batch = self._augment_batch_data(data_batch)
 		return data_batch, label_batch
 
+	def reset(self):
+		""" reset order of h5 files """
+		self.file_idxs = np.arange(0, len(self.h5_files))
+		if self.shuffle:
+			np.random.shuffle(self.file_idxs)
+		self.current_data, self.current_label = None, None
+		self.current_file_idx, self.batch_idx = 0, 0
 
 if __name__ == '__main__':
 	''' Parse Args for Training'''
