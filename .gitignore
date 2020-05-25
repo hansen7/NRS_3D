@@ -6,6 +6,9 @@ log
 .DS_Store
 .idea
 data/
+archive_bash/
+*.sh
+
 # C extensions
 *.so
 

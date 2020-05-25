@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 class get_model(nn.Module):
-	def __init__(self, num_class, nfl_cfg, normal_channel=True,):
+	def __init__(self, k, nfl_cfg, normal_channel=True,):
 		super(get_model, self).__init__()
 		in_channel = 6 if normal_channel else 3
 		self.normal_channel = normal_channel
@@ -27,7 +27,7 @@ class get_model(nn.Module):
 		self.fc2 = nn.Linear(512, 256)
 		self.bn2 = nn.BatchNorm1d(256)
 		self.drop2 = nn.Dropout(0.4)
-		self.fc3 = nn.Linear(256, num_class)
+		self.fc3 = nn.Linear(256, k)
 
 	def forward(self, xyz):
 		B, _, _ = xyz.shape
