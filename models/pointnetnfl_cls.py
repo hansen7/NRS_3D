@@ -12,7 +12,7 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 
 
 class get_model(nn.Module):
-	def __init__(self, nfl_cfg, k=40, normal_channel=False):
+	def __init__(self, nfl_cfg, k=40, normal_channel=False, **kwargs):
 		super(get_model, self).__init__()
 		if normal_channel:
 			channel = 6

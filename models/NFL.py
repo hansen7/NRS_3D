@@ -1,6 +1,6 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import numpy as np, torch.nn as nn, torch
+import numpy as np, torch.nn as nn, torch, pdb
 
 
 def perm_mask(dd, dH, dW, nMul):
@@ -63,9 +63,10 @@ class NFL(nn.Module):
 				nn.Linear(nFC, nClass)
 			)
 		else:
-			self.dense = nn.Sequential(
-				nn.Linear(self.dd * self.nMul, nClass)
-			)
+			# self.dense = nn.Sequential(
+			# 	nn.Linear(self.dd * self.nMul, nClass)
+			# )
+			self.dense = nn.Sequential()
 
 	def forward(self, x):
 		x = torch.stack([xi[self.mask] for xi in torch.unbind(x, dim=0)], dim=0)
@@ -78,6 +79,7 @@ class NFL(nn.Module):
 		# x = self.nfl3(x)
 
 		x = x.view(x.size(0), -1)
+		# pdb.set_trace()
 		x = self.dense(x)
 
 		return x

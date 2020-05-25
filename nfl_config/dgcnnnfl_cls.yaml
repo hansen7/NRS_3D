@@ -6,7 +6,7 @@ MODEL:
     DD: 2048 # the dim of output features by encoder
     DH: 3 # or 3
     DW: 3 # or 3
-    N_MUL: 2 # or 4
+    N_MUL: 1 # or 4
     N_PER_GROUP: 64 # or 64 or 128
     FC:
         N_FC: 1024
