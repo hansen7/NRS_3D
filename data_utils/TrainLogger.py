@@ -113,8 +113,8 @@ class TrainLogger:
 		self.epoch = checkpoint['epoch']
 		self.best_instance_epoch, self.best_instance_acc = checkpoint['epoch'], checkpoint['instance_acc']
 		self.best_class_epoch, self.best_class_acc = checkpoint['best_class_epoch'], checkpoint['best_class_acc']
-		self.logger.info('Best Class Acc {} at Epoch {}'.format(self.best_instance_acc, self.best_class_epoch))
-		self.logger.info('Best Instance Acc {} at Epoch {}'.format(self.best_instance_acc, self.best_instance_epoch))
+		self.logger.info('Best Class Acc {:.3f} at Epoch {}'.format(self.best_instance_acc, self.best_class_epoch))
+		self.logger.info('Best Instance Acc {:.3f} at Epoch {}'.format(self.best_instance_acc, self.best_instance_epoch))
 
 	# def cout_nflconfig(self):
 	# 	if self.args.cout_nflconfig:
