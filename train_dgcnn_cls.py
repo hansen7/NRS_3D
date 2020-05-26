@@ -90,6 +90,13 @@ def main(args):
 		raise Exception("Specified Model is Not Implemented")
 	model = nn.DataParallel(model)
 
+	try:
+		checkpoint = torch.load(MyLogger.savepath)
+		model.load_state_dict(checkpoint['model_state_dict'])
+		MyLogger.update_from_checkpoints(checkpoint)
+	except:
+		MyLogger.logger.info('No pre-trained model, start training from scratch...')
+
 	if args.use_sgd:
 		print("Use SGD Optimiser")
 		opt = torch.optim.SGD(model.parameters(), lr=args.lr * 100, momentum=args.momentum, weight_decay=1e-4)
