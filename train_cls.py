@@ -1,12 +1,13 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import os, sys, pdb, torch, shutil, importlib, argparse, numpy as np
+import os, sys, pdb, time, torch, shutil, importlib, argparse, numpy as np
 sys.path.append('data_utils')
 sys.path.append('models')
 from pc_utils import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
 from ModelNetDataLoader import ModelNetDataLoader
 from torch.utils.tensorboard import SummaryWriter
 from data_utils.TrainLogger import TrainLogger
+from Inference_Timer import Inference_Timer
 from Dict2Object import Dict2Object
 from tqdm import tqdm
 
@@ -18,6 +19,7 @@ def parse_args():
 	parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
 	parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate [default: 1e-4]')
 	parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
+	parser.add_argument('--inference_timer', action='store_true', default=False, help='inference timer')
 	parser.add_argument('--batch_size', type=int, default=24, help='batch size in training [default: 24]')
 	parser.add_argument('--epoch',  default=200, type=int, help='number of epoch in training [default: 200]')
 	parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
@@ -32,7 +34,12 @@ def main(args):
 	os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 	os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-	'''Set up Loggers and Load Data'''
+	''' === Inference Time Calculation === '''
+	if args.inference_timer:
+		MyTimer = Inference_Timer(args)
+		args = MyTimer.update_args()
+
+	''' === Set up Loggers and Load Data === '''
 	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
 	MyLogger.logger.info('Load dataset ...')
 	DATA_PATH = 'data/modelnet40_normal_resampled/'
@@ -41,7 +48,7 @@ def main(args):
 	trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4)
 	testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
-	'''Model Loading and Files Backup'''
+	''' === Model Loading and Files Backup === '''
 	num_class = 40
 	MODEL = importlib.import_module(args.model)
 	shutil.copy(args.nfl_cfg, MyLogger.log_dir)
@@ -63,7 +70,7 @@ def main(args):
 	except:
 		MyLogger.logger.info('No pre-trained model, start training from scratch...')
 
-	'''Optimiser and Scheduler'''
+	''' === Optimiser and Scheduler === '''
 	if args.optimizer == 'Adam':
 		optimizer = torch.optim.Adam(
 			classifier.parameters(),
@@ -77,12 +84,12 @@ def main(args):
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)
 
 	for epoch in range(MyLogger.epoch, args.epoch + 1):
-		'''Training'''
+		''' === Training === '''
 		scheduler.step()
 		classifier.train()
 		MyLogger.cls_epoch_init()
 		# writer.add_scalar('learning rate', scheduler.get_lr()[-1], global_step)
-
+		time_list = []
 		for points, target in tqdm(trainDataLoader, total=len(trainDataLoader), smoothing=0.9):
 			# Data Augmentation
 			points = random_point_dropout(points.data.numpy())
@@ -92,7 +99,11 @@ def main(args):
 
 			# FP and BP
 			optimizer.zero_grad()
-			pred, trans_feat = classifier(points)
+			if args.inference_timer:
+				pred, trans_feat = MyTimer.single_epoch(classifier, points)
+			else:
+				pred, trans_feat = classifier(points)
+
 			loss = criterion(pred, target.long(), trans_feat)
 			loss.backward()
 			optimizer.step()
@@ -100,7 +111,8 @@ def main(args):
 									 target.long().cpu().numpy(), 
 									 loss.cpu().detach().numpy())
 		MyLogger.cls_epoch_summary(writer=writer, training=True)
-		
+		MyTimer.update_single_epoch(MyLogger.logger)
+
 		'''Validating'''
 		with torch.no_grad():
 			classifier.eval()
