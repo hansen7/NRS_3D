@@ -5,8 +5,8 @@ __pycache__/
 log
 .DS_Store
 .idea
-data/
-ref/
+data
+ref
 models/pointnetnfl_new_cls.py
 train_cls_raw.py
 
