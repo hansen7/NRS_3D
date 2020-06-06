@@ -1,19 +1,20 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
 import os, sys, pdb, time, torch, shutil, importlib, argparse, numpy as np
-sys.path.append('data_utils')
+sys.path.append('utils')
 sys.path.append('models')
-from pc_utils import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
+from PC_Augmentation import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud
 from ModelNetDataLoader import ModelNetDataLoader
 from torch.utils.tensorboard import SummaryWriter
-from data_utils.TrainLogger import TrainLogger
 from Inference_Timer import Inference_Timer
 from Dict2Object import Dict2Object
+from TrainLogger import TrainLogger
 from tqdm import tqdm
 
 
 def parse_args():
 	parser = argparse.ArgumentParser('Point Cloud Classification')
+
 	parser.add_argument('--log_dir', type=str, default=None, help='experiment root')
 	parser.add_argument('--gpu', type=str, default='0', help='specify gpu device [default: 0]')
 	parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
@@ -23,9 +24,10 @@ def parse_args():
 	parser.add_argument('--batch_size', type=int, default=24, help='batch size in training [default: 24]')
 	parser.add_argument('--epoch',  default=200, type=int, help='number of epoch in training [default: 200]')
 	parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
+	parser.add_argument('--nrs_cfg', type=str, default='pointnet_cls', help='NFL configs [default: pointnet_cls]')
 	parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normals [default: False]')
 	parser.add_argument('--learning_rate', default=0.001, type=float, help='learning rate in training [default: 0.001]')
-	parser.add_argument('--nfl_cfg', type=str, default='pointnetnfl_cls', help='NFL configs [default: pointnetnfl_cls]')
+
 	return parser.parse_args()
 
 
@@ -37,7 +39,7 @@ def main(args):
 	''' === Inference Time Calculation === '''
 	if args.inference_timer:
 		MyTimer = Inference_Timer(args)
-		args = MyTimer.update_args()
+		args = MyTimer.update_args()  # Set the batch size as 1, and epoch as 3
 
 	''' === Set up Loggers and Load Data === '''
 	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
@@ -49,16 +51,15 @@ def main(args):
 	testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
 	''' === Model Loading and Files Backup === '''
-	num_class = 40
 	MODEL = importlib.import_module(args.model)
-	shutil.copy(args.nfl_cfg, MyLogger.log_dir)
+	shutil.copy(args.nrs_cfg, MyLogger.log_dir)
 	shutil.copy(os.path.abspath(__file__), MyLogger.log_dir)
 	shutil.copy('./models/%s.py' % args.model, MyLogger.log_dir)
 	writer = SummaryWriter(os.path.join(MyLogger.experiment_dir, 'runs'))
 
 	# allow multiple GPU running
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-	classifier = MODEL.get_model(k=num_class, normal_channel=args.normal, nfl_cfg=Dict2Object(args.nfl_cfg)).to(device)
+	classifier = MODEL.get_model(num_class=40, normal_channel=args.normal, nrs_cfg=Dict2Object(args.nrs_cfg)).to(device)
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
 	print("="*33, "\n", "Let's use", torch.cuda.device_count(), "GPUs, Indices are: %s!" % args.gpu, "\n", "="*33)
@@ -89,7 +90,7 @@ def main(args):
 		classifier.train()
 		MyLogger.cls_epoch_init()
 		# writer.add_scalar('learning rate', scheduler.get_lr()[-1], global_step)
-		time_list = []
+
 		for points, target in tqdm(trainDataLoader, total=len(trainDataLoader), smoothing=0.9):
 			# Data Augmentation
 			points = random_point_dropout(points.data.numpy())
@@ -137,14 +138,13 @@ def main(args):
 					'optimizer_state_dict': optimizer.state_dict(),
 				}
 				torch.save(state, MyLogger.savepath)
-		# pdb.set_trace()
 	MyLogger.cls_train_summary()
 
 
 if __name__ == '__main__':
 	''' Parse Args for Training'''
 	args = parse_args()
-	args.nfl_cfg = os.path.join('nfl_config', args.nfl_cfg + '.yaml')
+	args.nrs_cfg = os.path.join('nrs_cfg', args.nrs_cfg + '.yaml')
 
 	''' Train the Model'''
 	main(args)

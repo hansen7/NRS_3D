@@ -4,7 +4,7 @@ Date: Nov 2019
 """
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-from data_utils.ModelNetDataLoader import ModelNetDataLoader
+from utils.ModelNetDataLoader import ModelNetDataLoader
 import argparse
 import numpy as np
 import os

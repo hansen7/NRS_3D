@@ -9,9 +9,10 @@ data/
 archive_bash/
 *.sh
 ref/
-models/dgcnn.py
 models/pointnetnfl_new_cls.py
-train_dgcnn_cls.py
+models/pointnet2_cls_msg.py
+models/pointnet2_cls_ssg.py
+models/pointnet_cls.py
 train_cls_raw.py
 
 

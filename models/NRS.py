@@ -12,9 +12,9 @@ def perm_mask(dd, dH, dW, nMul):
 	return m
 
 
-class NFL(nn.Module):
+class NRS(nn.Module):
 	def __init__(self, cfg):
-		super(NFL, self).__init__()
+		super(NRS, self).__init__()
 
 		self.dd = cfg.MODEL.DD  # should be 1024
 		self.dH = cfg.MODEL.DH  # 3 or 5

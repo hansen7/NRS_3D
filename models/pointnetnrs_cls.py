@@ -1,28 +1,22 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import torch.utils.data, sys, os, pdb, torch.nn as nn, torch.nn.functional as F
+import sys, pdb, torch.utils.data, torch.nn as nn, torch.nn.functional as F
 sys.path.append('../')
-from pointnet import PointNetEncoder, feature_transform_reguliarzer
-from data_utils.Dict2Object import Dict2Object
+from pointnet_util import PointNetEncoder, feature_transform_regularizer
+from utils.Dict2Object import Dict2Object
 from torchsummary import summary
-from NFL import NFL
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+from NRS import NRS
 
 
 class get_model(nn.Module):
-	def __init__(self, nfl_cfg, k=40, normal_channel=False, **kwargs):
+	def __init__(self, nrs_cfg, num_class, normal_channel=False, **kwargs):
 		super(get_model, self).__init__()
-		if normal_channel:
-			channel = 6
-		else:
-			channel = 3
-		self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=channel)
-		self.nfl = NFL(nfl_cfg)
+		num_channel = 6 if normal_channel else 3
+		self.feat = PointNetEncoder(feature_transform=True, channel=num_channel)
+		self.nrs = NRS(nrs_cfg)
 		self.fc1 = nn.Linear(1024, 512)
 		self.fc2 = nn.Linear(512, 256)
-		self.fc3 = nn.Linear(256, k)
+		self.fc3 = nn.Linear(256, num_class)
 
 		# set dropout ratio as 0.4
 		self.dropout = nn.Dropout(p=0.4)
@@ -32,7 +26,7 @@ class get_model(nn.Module):
 
 	def forward(self, x):
 		x, trans, trans_feat = self.feat(x)
-		x = self.nfl(x)
+		x = self.nrs(x)
 		# pdb.set_trace()
 		x = F.relu(self.bn1(self.fc1(x)))
 		x = F.relu(self.bn2(self.dropout(self.fc2(x))))
@@ -62,17 +56,15 @@ class get_loss(torch.nn.Module):
 
 	def forward(self, pred, target, trans_feat):
 		loss = F.nll_loss(pred, target)
-		mat_diff_loss = feature_transform_reguliarzer(trans_feat)
+		mat_diff_loss = feature_transform_regularizer(trans_feat)
 
 		total_loss = loss + mat_diff_loss * self.mat_diff_loss_scale
 		return total_loss
 
 
 if __name__ == '__main__':
-	# 24, 1024, 3
-
-	cfg = Dict2Object(Path2Dict='../nfl_config/pointnetnfl_cls.yaml')
+	cfg = Dict2Object(Path2Dict='../nrs_cfg/pointnet_cls.yaml')
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	model = get_model(nfl_cfg=cfg).to(device)
-	# https://github.com/sksq96/pytorch-summary/issues/33
+	model = get_model(nrs_cfg=cfg, num_class=40).to(device)
+	# ref: https://github.com/sksq96/pytorch-summary/issues/33
 	summary(model, (3, 1024))
