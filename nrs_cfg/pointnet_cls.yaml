@@ -11,10 +11,3 @@ MODEL:
     FC:
         N_FC: 1024
         B_FC: False
-
-INPUT:
-    SIZE: 1024
-    NORMAL: False
-
-SOLVER:
-    MAX_EPOCHS: 200

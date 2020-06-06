@@ -20,13 +20,13 @@ def parse_args():
 	parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
 	parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate [default: 1e-4]')
 	parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
-	parser.add_argument('--inference_timer', action='store_true', default=False, help='inference timer')
+	parser.add_argument('--inference_timer', action='store_true', default=False, help='use inference timer')
 	parser.add_argument('--batch_size', type=int, default=24, help='batch size in training [default: 24]')
 	parser.add_argument('--epoch',  default=200, type=int, help='number of epoch in training [default: 200]')
 	parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
-	parser.add_argument('--nrs_cfg', type=str, default='pointnet_cls', help='NFL configs [default: pointnet_cls]')
+	parser.add_argument('--nrs_cfg', type=str, default='pointnet_cls', help='nrs configs [default: pointnet_cls]')
 	parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normals [default: False]')
-	parser.add_argument('--learning_rate', default=0.001, type=float, help='learning rate in training [default: 0.001]')
+	parser.add_argument('--learning_rate', default=0.001, type=float, help='initial learning rate [default: 0.001]')
 
 	return parser.parse_args()
 
@@ -40,7 +40,7 @@ def main(args):
 	if args.inference_timer:
 		MyTimer = Inference_Timer(args)
 		args = MyTimer.update_args()  # Set the batch size as 1, and epoch as 3
-
+	
 	''' === Set up Loggers and Load Data === '''
 	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
 	MyLogger.logger.info('Load dataset ...')
@@ -96,12 +96,16 @@ def main(args):
 			points = random_point_dropout(points.data.numpy())
 			points[:, :, 0:3] = random_scale_point_cloud(points[:, :, 0:3])
 			points[:, :, 0:3] = random_shift_point_cloud(points[:, :, 0:3])
-			points, target = torch.Tensor(points).transpose(2, 1).cuda(), target[:, 0].cuda()
-
+		
+			if args.gpu == 'None':
+				points, target = torch.Tensor(points).transpose(2, 1), target[:, 0]
+			else:
+				points, target = torch.Tensor(points).transpose(2, 1).cuda(), target[:, 0].cuda()
+			
 			# FP and BP
 			optimizer.zero_grad()
 			if args.inference_timer:
-				pred, trans_feat = MyTimer.single_epoch(classifier, points)
+				pred, trans_feat = MyTimer.single_step(classifier, points)
 			else:
 				pred, trans_feat = classifier(points)
 
