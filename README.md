@@ -1,11 +1,11 @@
-## Neural Random Subspace (NRS), 3D Part
+## Neural Random Subspace (NRS), 3D Part, [project page](https://hansen7.github.io/NRS/)
 
 This repo includes the content that we use to verify the effectiveness of NRS (Neural Random Subspace) module on 3D Point Cloud Recognition Task. It is based on the following implementations:
 
 - https://github.com/WangYueFt/dgcnn
 - https://github.com/yanx27/Pointnet_Pointnet2_pytorch
 
-Baselines we use include [PointNet](http://openaccess.thecvf.com/content_cvpr_2017/papers/Qi_PointNet_Deep_Learning_CVPR_2017_paper.pdf) , [PointNet++](http://papers.nips.cc/paper/7095-pointnet-deep-hierarchical-feature-learning-on-point-sets-in-a-metric-space.pdf) and [DGCNN](https://arxiv.org/abs/1801.07829) (optional), the results and other parts can be checked via the [project page](https://hansen7.github.io/NRS/).
+Baselines we use include [PointNet](http://openaccess.thecvf.com/content_cvpr_2017/papers/Qi_PointNet_Deep_Learning_CVPR_2017_paper.pdf) , [PointNet++](http://papers.nips.cc/paper/7095-pointnet-deep-hierarchical-feature-learning-on-point-sets-in-a-metric-space.pdf) and [DGCNN](https://arxiv.org/abs/1801.07829) (optional)
 
 We'd love you to cite our work if you find it is helpful :)
 
