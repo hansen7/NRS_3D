@@ -1,4 +1,4 @@
-## Neural Random Subspace (NRS), 3D Part, [project page](https://hansen7.github.io/NRS/)
+## Neural Random Subspace (NRS), 3D Part, [Project Page](https://hansen7.github.io/NRS/)
 
 This repo includes the content that we use to verify the effectiveness of NRS (Neural Random Subspace) module on 3D Point Cloud Recognition Task. It is based on the following implementations:
 
