@@ -6,7 +6,6 @@ log
 .DS_Store
 .idea
 data/
-*.sh
 ref/
 models/pointnetnfl_new_cls.py
 train_cls_raw.py
