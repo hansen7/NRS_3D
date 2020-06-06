@@ -33,5 +33,6 @@ class Inference_Timer:
 		return output
 
 	def update_single_epoch(self, logger):
-		logger.info("{}, Average Inference Time Per Examples on Single {}: {:.3f}".format(
-			self.args.model, self.device, np.mean(self.est_total)))
+		logger.info("Model: {}".format(self.args.model))
+		logger.info("Average Inference Time Per Example on Single {}: {:.3f} milliseconds".format(
+			self.device, np.mean(self.est_total)*1000))

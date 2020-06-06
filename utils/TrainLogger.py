@@ -99,8 +99,6 @@ class TrainLogger:
 
 		if self.save_model:
 			self.logger.info('Saving the Model Params to %s' % self.savepath)
-		if not training:
-			self.logger.info('\n')
 
 	def cls_train_summary(self):
 		self.logger.info('End of Training...')
