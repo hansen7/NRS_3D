@@ -7,14 +7,15 @@ class Inference_Timer:
 		self.args = args
 		self.est_total = []
 		self.use_cpu = True if (self.args.gpu == 'None') else False
+		self.device = 'CPU' if self.use_cpu else 'GPU'
 		if self.use_cpu:
-			os.environ['OMP_NUM_THREADS'] = "10"
-			os.environ['MKL_NUM_THREADS'] = "10"
+			os.environ['OMP_NUM_THREADS'] = "1"
+			os.environ['MKL_NUM_THREADS'] = "1"
 			print('Now we calculate the inference time on a single CPU')
 		else:
 			print('Now we calculate the inference time on a single GPU')
 		self.args.batch_size, self.args.epoch = 2, 3
-		#  we cannot set batch_size as 1, since it BatchNorm requires the more than one sample to compute std
+		#  1D BatchNorm requires more than 1 sample to compute std
 		#  red: https://github.com/pytorch/pytorch/issues/7716
 
 	def update_args(self):
@@ -32,4 +33,5 @@ class Inference_Timer:
 		return output
 
 	def update_single_epoch(self, logger):
-		logger.info("Inference Time Per Examples: {}".format(np.mean(self.est_total)))
+		logger.info("{}, Average Inference Time Per Examples on Single {}: {:.3f}".format(
+			self.args.model, self.device, np.mean(self.est_total)))

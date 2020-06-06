@@ -5,7 +5,9 @@ from thop import profile
 sys.path.append('../')
 sys.path.append('../models')
 from models.pointnetnrs_cls import get_model
-from models.pointnet2nrs_cls_ssg import get_model
+from models.pointnet_cls import get_model
+# from models.pointnet2_cls_ssg import get_model
+# from models.pointnet2nrs_cls_ssg import get_model
 from utils.Dict2Object import Dict2Object
 from models.dgcnn_cls import DGCNN, DGCNN_NRS
 
@@ -28,14 +30,14 @@ if __name__ == "__main__":
 		return parser.parse_args()
 	
 	args = parse_args()
-	model = DGCNN(args).to(device)
-	model = DGCNN_NRS(args).to(device)
-	
+	# model = DGCNN(args).to(device)
+	# model = DGCNN_NRS(args).to(device)
+
 	''' === Set up the Shape of Input === '''
-	input = torch.randn(1, 3, 1024).cuda()
+	input = torch.randn(1, 3, 1024)#.cuda()
 	# input = torch.randn(1, 6, 1024).cuda() # with normals, for PointNet++
 	macs, params = profile(model, inputs=(input, ))
 
 	print('\n======================')
-	print('FLOPs: %.1f G' % (macs/1e9))
-	print('Num of Params %.1f M' % (params/1e6))
+	print('FLOPs: %.3f G' % (macs/1e9))
+	print('Num of Params %.3f M' % (params/1e6))
