@@ -14,7 +14,7 @@ class Inference_Timer:
 			print('Now we calculate the inference time on a single CPU')
 		else:
 			print('Now we calculate the inference time on a single GPU')
-		self.args.batch_size, self.args.epoch = 2, 3
+		self.args.batch_size, self.args.epoch = 2, 1
 		#  1D BatchNorm requires more than 1 sample to compute std
 		#  red: https://github.com/pytorch/pytorch/issues/7716
 

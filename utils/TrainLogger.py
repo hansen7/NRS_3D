@@ -28,6 +28,12 @@ class TrainLogger:
 		file_handler = logging.FileHandler(os.path.join(self.log_dir, 'train_log.txt'))
 		file_handler.setLevel(logging.INFO)
 		file_handler.setFormatter(formatter)
+		# ref: https://stackoverflow.com/a/53496263/12525201
+		# define a Handler which writes INFO messages or higher to the sys.stderr
+		console = logging.StreamHandler()
+		console.setLevel(logging.INFO)
+		# logging.getLogger('').addHandler(console) # this is root logger
+		self.logger.addHandler(console)
 		self.logger.addHandler(file_handler)
 		self.logger.info('PARAMETER ...')
 		self.logger.info(self.args)
@@ -113,6 +119,3 @@ class TrainLogger:
 		self.best_class_epoch, self.best_class_acc = checkpoint['best_class_epoch'], checkpoint['best_class_acc']
 		self.logger.info('Best Class Acc {:.3f} at Epoch {}'.format(self.best_instance_acc, self.best_class_epoch))
 		self.logger.info('Best Instance Acc {:.3f} at Epoch {}'.format(self.best_instance_acc, self.best_instance_epoch))
-
-	# def cout_nflconfig(self):
-	# 	if self.args.cout_nflconfig:

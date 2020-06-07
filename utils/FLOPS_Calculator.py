@@ -1,4 +1,5 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
+#  Recommended Sources: https://github.com/CeLuigi/models-comparison.pytorch
 
 import sys, pdb, torch, argparse
 from thop import profile

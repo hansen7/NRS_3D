@@ -43,13 +43,12 @@ def main(args):
 		args = MyTimer.update_args()  # Set the batch size as 1, and epoch as 3
 	
 	''' === Set up Loggers and Load Data === '''
-	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
-	MyLogger.logger.info('Load dataset ...')
 	DATA_PATH = 'data/modelnet40_normal_resampled/'
 	TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='train', normal_channel=args.normal)
 	TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, split='test', normal_channel=args.normal)
 	trainDataLoader = DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
 	testDataLoader = DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4)
+	MyLogger = TrainLogger(args, name=args.model.upper(), subfold='cls')
 
 	''' === Model Loading and Files Backup === '''
 	MODEL = importlib.import_module(args.model)
@@ -117,7 +116,9 @@ def main(args):
 									 target.long().cpu().numpy(), 
 									 loss.cpu().detach().numpy())
 		MyLogger.cls_epoch_summary(writer=writer, training=True)
-		MyTimer.update_single_epoch(MyLogger.logger)
+		if args.inference_timer:
+			MyTimer.update_single_epoch(MyLogger.logger)
+			break
 
 		'''Validating'''
 		with torch.no_grad():
