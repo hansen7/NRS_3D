@@ -8,6 +8,8 @@ log
 data
 ref
 models/pointnetnfl_new_cls.py
+models/pointnet_cls.py
+models/pointnet2_cls*
 train_cls_raw.py
 
 

@@ -57,13 +57,13 @@ def main(args):
 	shutil.copy('./models/%s.py' % args.model, MyLogger.log_dir)
 	writer = SummaryWriter(os.path.join(MyLogger.experiment_dir, 'runs'))
 
-	# allow multiple GPU running
+	# allow multiple GPUs
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	classifier = MODEL.get_model(num_class=40, normal_channel=args.normal, nrs_cfg=Dict2Object(args.nrs_cfg)).to(device)
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
-	print("="*33, "\n", "Let's use", torch.cuda.device_count(), "GPUs, Indices are: %s!" % args.gpu, "\n", "="*33)
-	
+	print("="*33, "\n", "Number of GPU(s):", torch.cuda.device_count(), "Indices: %s!\n" % args.gpu, "="*33)
+
 	try:
 		checkpoint = torch.load(MyLogger.savepath)
 		classifier.load_state_dict(checkpoint['model_state_dict'])

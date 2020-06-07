@@ -16,15 +16,15 @@ We'd love you to cite our work if you find it is helpful :)
 ##### - Data Preparation:
 
 ```bash
-bash archieve_bash/download_data.sh
+bash archive_bash/download_data.sh
 ```
 
 ##### - Training Models:
 
 ```bash
-bash archieve_bash/train_pointnet.sh
-bash archieve_bash/train_pointnet2.sh
-bash archieve_bash/train_dgcnn.sh
+bash archive_bash/train_pointnet.sh
+bash archive_bash/train_pointnet2.sh
+bash archive_bash/train_dgcnn.sh
 ```
 
 ##### - FLOPS and \#Params
@@ -36,7 +36,7 @@ see utils/FLOPs_Calculator.py for details
 ##### - Inference Time
 
 ```bash
-bash archieve_bash/timer.sh
+bash archive_bash/timer.sh
 ```
 
 

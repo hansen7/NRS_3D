@@ -37,6 +37,7 @@ class TrainLogger:
 		self.logger.addHandler(file_handler)
 		self.logger.info('PARAMETER ...')
 		self.logger.info(self.args)
+		self.logger.removeHandler(console)
 
 	def make_logdir(self):
 		timestr = str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
@@ -112,7 +113,7 @@ class TrainLogger:
 			self.best_instance_acc, self.best_instance_epoch, self.best_class_acc, self.best_class_epoch))
 
 	def update_from_checkpoints(self, checkpoint):
-		self.logger.info('Use Pre-Trained checkpoints')
+		self.logger.info('Use Pre-Trained Weights')
 		self.step = checkpoint['step']
 		self.epoch = checkpoint['epoch']
 		self.best_instance_epoch, self.best_instance_acc = checkpoint['epoch'], checkpoint['instance_acc']
