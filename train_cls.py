@@ -63,6 +63,9 @@ def main(args):
 	criterion = MODEL.get_loss().to(device)
 	classifier = torch.nn.DataParallel(classifier)
 	print("="*33, "\n", "Number of GPU(s):", torch.cuda.device_count(), "Indices: %s!\n" % args.gpu, "="*33)
+	# nn.DataParallel has its own issues (slow, memory expensive), here are some advanced solutions:
+	# https://zhuanlan.zhihu.com/p/145427849
+
 
 	try:
 		checkpoint = torch.load(MyLogger.savepath)
