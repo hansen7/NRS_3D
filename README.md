@@ -11,6 +11,19 @@ We'd love you to cite our work if you find it is helpful :)
 
 
 
+```
+@misc{NRS-Yunhao,
+    title={Neural Random Subspace},
+    author={Yun-Hao Cao and Jianxin Wu and Hanchen Wang and Joan Lasenby},
+    year={2019},
+    eprint={1911.07845},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
+}
+```
+
+
+
 #### To start with:
 
 ##### - Data Preparation:
