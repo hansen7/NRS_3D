@@ -1,7 +1,7 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 #  Ref: https://github.com/WangYueFt/dgcnn/blob/master/pytorch/main.py
 
-import sys, os, pdb, torch, shutil, argparse, numpy as np, torch.nn as nn, torch.nn.functional as F
+import sys, os, torch, shutil, argparse, numpy as np, torch.nn as nn, torch.nn.functional as F
 sys.path.append('models')
 sys.path.append('utils')
 from PC_Augmentation import random_point_dropout, random_scale_point_cloud, random_shift_point_cloud

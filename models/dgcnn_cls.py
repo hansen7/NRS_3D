@@ -1,7 +1,7 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 #  Ref: https://github.com/WangYueFt/dgcnn/blob/master/pytorch/model.py
 
-import sys, pdb, torch, torch.nn as nn, torch.nn.functional as F
+import sys, torch, torch.nn as nn, torch.nn.functional as F
 sys.path.append('../')
 from utils.Dict2Object import Dict2Object
 from NRS import NRS
@@ -10,7 +10,7 @@ def knn(x, k):
 	inner = -2 * torch.matmul(x.transpose(2, 1), x)
 	xx = torch.sum(x**2, dim=1, keepdim=True)
 	pairwise_distance = -xx - inner - xx.transpose(2, 1)
-	idx = pairwise_distance.topk(k=k, dim=-1)[1]   # (batch_size, num_points, k)
+	idx = pairwise_distance.topk(k=k, dim=-1)[1]
 	return idx
 
 

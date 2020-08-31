@@ -98,4 +98,3 @@ def jitter_pointcloud_dgcnn(pointcloud, sigma=0.01, clip=0.02):
 	N, C = pointcloud.shape
 	pointcloud += np.clip(sigma * np.random.randn(N, C), -1*clip, clip)
 	return pointcloud
-

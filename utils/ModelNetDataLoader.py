@@ -1,8 +1,6 @@
 #  Copyright (c) 2020. Hanchen Wang, hw501@cam.ac.uk
 
-import numpy as np
-import warnings
-import os
+import os, warnings, numpy as np
 from torch.utils.data import Dataset
 
 warnings.filterwarnings('ignore')
