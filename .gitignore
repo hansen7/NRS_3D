@@ -1,4 +1,8 @@
 # Byte-compiled / optimized / DLL files
+
+test_cls.py
+utils/ShapeNetDataLoader.py
+
 __pycache__/
 *.py[cod]
 *$py.class

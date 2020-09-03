@@ -1,25 +1,28 @@
 ## Neural Random Subspace (NRS), 3D Part, [Project Page](https://hansen7.github.io/NRS/)
 
-This repo includes the content that we use to verify the effectiveness of NRS (Neural Random Subspace) module on 3D Point Cloud Recognition Task. It is based on the following implementations:
+This repo includes the content that we use to verify the effectiveness of NRS (Neural Random Subspace) module on 3D Point Cloud Recognition Task. 
+
+![NRS-diagram](teaser/NRS-diagram.jpg)
+
+
+
+It is based on the following implementations:
 
 - https://github.com/WangYueFt/dgcnn
 - https://github.com/yanx27/Pointnet_Pointnet2_pytorch
 
-Baselines we use include [PointNet](http://openaccess.thecvf.com/content_cvpr_2017/papers/Qi_PointNet_Deep_Learning_CVPR_2017_paper.pdf) , [PointNet++](http://papers.nips.cc/paper/7095-pointnet-deep-hierarchical-feature-learning-on-point-sets-in-a-metric-space.pdf) and [DGCNN](https://arxiv.org/abs/1801.07829) (optional)
-
-We'd love you to cite our work if you find it is helpful :)
+Major implementations of NRS can be found here: https://github.com/CupidJay/NRS_pytorch
 
 
 
-```
-@misc{NRS-Yunhao,
-    title={Neural Random Subspace},
-    author={Yun-Hao Cao and Jianxin Wu and Hanchen Wang and Joan Lasenby},
-    year={2019},
-    eprint={1911.07845},
-    archivePrefix={arXiv},
-    primaryClass={cs.LG}
-}
+For the details of ideas and results, please refer to our paper. We'd love you to cite it if you find it helpful :)
+
+```bib
+@article{NRS,
+   title         = {Neural Random Subspace},
+   author        = {Yun-Hao Cao and Jianxin Wu and Hanchen Wang and Joan Lasenby},
+   year          = {2020},
+   journal = {arXiv preprint arXiv:1911.07845}}
 ```
 
 
