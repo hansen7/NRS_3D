@@ -1,4 +1,4 @@
-## Neural Random Subspace (NRS), 3D Part, [Project Page](https://hansen7.github.io/NRS/)
+## Neural Random Subspace (NRS), 3D Part
 
 This repo includes the content that we use to verify the effectiveness of NRS (Neural Random Subspace) module on 3D Point Cloud Recognition Task. 
 
@@ -11,7 +11,7 @@ It is based on the following implementations:
 - https://github.com/WangYueFt/dgcnn
 - https://github.com/yanx27/Pointnet_Pointnet2_pytorch
 
-Major implementations of NRS can be found here: https://github.com/CupidJay/NRS_pytorch
+**Major implementations of NRS can be found here: https://github.com/CupidJay/NRS_pytorch**
 
 
 
@@ -19,10 +19,15 @@ For the details of ideas and results, please refer to our paper. We'd love you t
 
 ```bib
 @article{NRS,
-   title         = {Neural Random Subspace},
-   author        = {Yun-Hao Cao and Jianxin Wu and Hanchen Wang and Joan Lasenby},
-   year          = {2020},
-   journal = {arXiv preprint arXiv:1911.07845}}
+	title        = {Neural random subspace},
+	author       = {Yun-Hao Cao and Jianxin Wu and Hanchen Wang and Joan Lasenby},
+	year         = 2021,
+	journal      = {Pattern Recognition},
+	volume       = 112,
+	pages        = 107801,
+	doi          = {https://doi.org/10.1016/j.patcog.2020.107801},
+	issn         = {0031-3203}
+}
 ```
 
 
@@ -54,7 +59,3 @@ see utils/FLOPs_Calculator.py for details
 ```bash
 bash archive_bash/timer.sh
 ```
-
-
-
-This version does not require to compile customized operators as in the original [PointNet++ repo](https://github.com/charlesq34/pointnet2)
